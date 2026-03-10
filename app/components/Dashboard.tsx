@@ -104,7 +104,7 @@ export default function Dashboard({ signageMode = false }: DashboardProps) {
   }
 
   return (
-    <div className="relative z-10 mx-auto py-5 max-w-[1440px] px-4 sm:px-6 lg:px-8">
+    <div className="relative z-10 mx-auto pt-0 pb-5 max-w-[1440px] px-4 sm:px-6 lg:px-8">
       {error && (
         <div className="mb-6 glass rounded-xl p-4 border-amber-500/20 border flex items-center gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
@@ -116,22 +116,9 @@ export default function Dashboard({ signageMode = false }: DashboardProps) {
       )}
 
       {/* Manager Rankings */}
-      <div className="mb-8">
+      <div>
         <ManagerRanking interviews={interviews} />
       </div>
-
-      {/* Footer */}
-      <footer className="text-center py-6">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <div className="w-5 h-5 rounded-md bg-gradient-to-br from-blue-500 via-purple-500 to-emerald-500 flex items-center justify-center">
-            <Sparkles className="w-3 h-3 text-white" />
-          </div>
-          <span className="text-xs font-semibold text-slate-500">CM Dashboard</span>
-        </div>
-        <p className="text-[11px] text-slate-600">
-          Real-time D365 Integration / Auto-refreshing every 30s
-        </p>
-      </footer>
     </div>
   )
 }

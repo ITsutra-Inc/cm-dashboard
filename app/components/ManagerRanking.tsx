@@ -405,7 +405,7 @@ export default function ManagerRanking({ interviews }: ManagerRankingProps) {
         backgroundSize: '60px 60px',
       }} />
 
-      <div className="relative z-10 px-8 pt-10 pb-8">
+      <div className="relative z-10 px-8 pt-4 pb-8">
         {/* Title section */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4" style={{
@@ -539,31 +539,6 @@ export default function ManagerRanking({ interviews }: ManagerRankingProps) {
           })}
         </div>
 
-        {/* Bottom bar */}
-        <div className="flex items-center justify-between px-3 pt-5 mt-2" style={{ borderTop: '1px solid rgba(99,102,241,0.08)' }}>
-          <div className="flex items-center gap-2 text-[11px] flex-wrap">
-            <span className="px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/15 font-semibold flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-blue-400" />
-              Initial = 1pt
-            </span>
-            <span className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 font-semibold flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-emerald-400" />
-              Final = 2pt
-            </span>
-            <span className="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/15 font-semibold flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-amber-400" />
-              End Client = +2pt
-            </span>
-            <span className="px-3 py-1.5 rounded-lg bg-slate-500/10 text-slate-400 border border-slate-500/15 font-semibold flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-slate-400" />
-              Other Client = +1pt
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-500">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Live Data</span>
-          </div>
-        </div>
       </div>
     </div>
   )
