@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getAccounts, getIndustryName } from '@/lib/d365'
 import { Company } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export async function GET() {
   try {
+    const { getAccounts, getIndustryName } = await import('@/lib/d365')
     const accounts = await getAccounts()
 
     const companies: Company[] = accounts.map((a: any) => ({

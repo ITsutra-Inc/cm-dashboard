@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { queryD365 } from '@/lib/d365'
 import { getManagerForCandidate, MANAGERS } from '@/lib/managers'
 import { Interview, ManagerStats } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 const INTERVIEW_LEVEL_MAP: Record<number, 'Initial' | 'Final' | null> = {
   3: null,      // Screening - excluded
@@ -23,6 +23,7 @@ export async function GET() {
   try {
     let interviews: Interview[] = []
 
+    const { queryD365 } = await import('@/lib/d365')
     // Query itsutra_interviews entity with all needed fields including client lookup
     const result = await queryD365('itsutra_interviews', {
       '$select': 'itsutra_interviewid,itsutra_name,itsutra_interviewlevel,itsutra_starttime,itsutra_calendarviewinformationtitle,itsutra_location,itsutra_islegit,statuscode,statecode,itsutra_interviewmode,_itsutra_client_value',

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { discoverEntities, getAccessToken } from '@/lib/d365'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export async function GET() {
   try {
+    const { discoverEntities, getAccessToken } = await import('@/lib/d365')
     // First verify we can authenticate
     await getAccessToken()
 
