@@ -1,9 +1,11 @@
-const TENANT_ID = process.env.D365_TENANT_ID!
-const CLIENT_ID = process.env.D365_CLIENT_ID!
-const CLIENT_SECRET = process.env.D365_CLIENT_SECRET!
-const ORG_URL = process.env.D365_ORG_URL!.replace(/\/$/, '')
-
-const API_BASE = `${ORG_URL}/api/data/v9.2`
+function getEnv() {
+  const TENANT_ID = process.env.D365_TENANT_ID || ''
+  const CLIENT_ID = process.env.D365_CLIENT_ID || ''
+  const CLIENT_SECRET = process.env.D365_CLIENT_SECRET || ''
+  const ORG_URL = (process.env.D365_ORG_URL || '').replace(/\/$/, '')
+  const API_BASE = `${ORG_URL}/api/data/v9.2`
+  return { TENANT_ID, CLIENT_ID, CLIENT_SECRET, ORG_URL, API_BASE }
+}
 
 let cachedToken: { token: string; expiresAt: number } | null = null
 
@@ -12,6 +14,7 @@ export async function getAccessToken(): Promise<string> {
     return cachedToken.token
   }
 
+  const { TENANT_ID, CLIENT_ID, CLIENT_SECRET, ORG_URL } = getEnv()
   const tokenUrl = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`
 
   const body = new URLSearchParams({
@@ -45,6 +48,7 @@ export async function queryD365(
   entitySet: string,
   params?: Record<string, string>
 ): Promise<any> {
+  const { API_BASE } = getEnv()
   const token = await getAccessToken()
 
   const url = new URL(`${API_BASE}/${entitySet}`)
@@ -71,6 +75,7 @@ export async function queryD365(
 }
 
 export async function discoverEntities(): Promise<any[]> {
+  const { API_BASE } = getEnv()
   const token = await getAccessToken()
 
   // Fetch all entity definitions without filter (D365 has limited filter support on metadata)
