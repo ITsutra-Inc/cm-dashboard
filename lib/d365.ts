@@ -1,20 +1,22 @@
-function getEnv() {
-  const TENANT_ID = process.env.D365_TENANT_ID || ''
-  const CLIENT_ID = process.env.D365_CLIENT_ID || ''
-  const CLIENT_SECRET = process.env.D365_CLIENT_SECRET || ''
-  const ORG_URL = (process.env.D365_ORG_URL || '').replace(/\/$/, '')
-  const API_BASE = `${ORG_URL}/api/data/v9.2`
-  return { TENANT_ID, CLIENT_ID, CLIENT_SECRET, ORG_URL, API_BASE }
-}
-
 let cachedToken: { token: string; expiresAt: number } | null = null
+
+function getOrgUrl(): string {
+  const raw = process.env.D365_ORG_URL
+  if (!raw) return ''
+  // Remove trailing slash without .replace()
+  return raw.endsWith('/') ? raw.slice(0, -1) : raw
+}
 
 export async function getAccessToken(): Promise<string> {
   if (cachedToken && Date.now() < cachedToken.expiresAt - 60000) {
     return cachedToken.token
   }
 
-  const { TENANT_ID, CLIENT_ID, CLIENT_SECRET, ORG_URL } = getEnv()
+  const TENANT_ID = process.env.D365_TENANT_ID || ''
+  const CLIENT_ID = process.env.D365_CLIENT_ID || ''
+  const CLIENT_SECRET = process.env.D365_CLIENT_SECRET || ''
+  const ORG_URL = getOrgUrl()
+
   const tokenUrl = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`
 
   const body = new URLSearchParams({
@@ -48,7 +50,8 @@ export async function queryD365(
   entitySet: string,
   params?: Record<string, string>
 ): Promise<any> {
-  const { API_BASE } = getEnv()
+  const ORG_URL = getOrgUrl()
+  const API_BASE = `${ORG_URL}/api/data/v9.2`
   const token = await getAccessToken()
 
   const url = new URL(`${API_BASE}/${entitySet}`)
@@ -75,10 +78,10 @@ export async function queryD365(
 }
 
 export async function discoverEntities(): Promise<any[]> {
-  const { API_BASE } = getEnv()
+  const ORG_URL = getOrgUrl()
+  const API_BASE = `${ORG_URL}/api/data/v9.2`
   const token = await getAccessToken()
 
-  // Fetch all entity definitions without filter (D365 has limited filter support on metadata)
   const url = `${API_BASE}/EntityDefinitions?$select=LogicalName,EntitySetName`
 
   const res = await fetch(url, {
@@ -125,7 +128,6 @@ export async function findInterviewEntity(): Promise<string | null> {
     }
   }
 
-  // Try discovering from entity definitions
   try {
     const entities = await discoverEntities()
     const interviewEntity = (entities as any[]).find((e: any) =>
@@ -184,7 +186,6 @@ export async function getAppointments(): Promise<any[]> {
   }
 }
 
-// Map D365 industry codes to readable names
 export function getIndustryName(code: number | null): string {
   const industries: Record<number, string> = {
     1: 'Accounting', 2: 'Agriculture', 3: 'Broadcasting', 4: 'Brokers',
