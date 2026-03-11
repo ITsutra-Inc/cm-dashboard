@@ -1,43 +1,71 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 export default function BackgroundMusic() {
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const startedRef = useRef(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [started, setStarted] = useState(false)
 
   useEffect(() => {
-    const audio = new Audio('/competitive-bg.mp3')
-    audio.loop = true
-    audio.volume = 0.3
-    audioRef.current = audio
+    const audio = audioRef.current
+    if (!audio) return
 
-    const startPlayback = () => {
-      if (startedRef.current) return
-      startedRef.current = true
-      audio.play().catch(() => {})
+    // Try autoplay immediately (works on refresh / if browser allows)
+    audio.play().then(() => setStarted(true)).catch(() => {})
+
+    const ensurePlaying = () => {
+      if (audio.paused) {
+        audio.play().then(() => setStarted(true)).catch(() => {})
+      }
     }
 
-    // Try autoplay immediately
-    audio.play().catch(() => {})
+    // If audio gets paused for any reason, restart it
+    audio.addEventListener('pause', () => {
+      audio.play().catch(() => {})
+    })
 
-    // Fallback: start on first user interaction (browsers block autoplay without it)
-    document.addEventListener('click', startPlayback, { once: true })
-    document.addEventListener('keydown', startPlayback, { once: true })
-    document.addEventListener('touchstart', startPlayback, { once: true })
-    document.addEventListener('scroll', startPlayback, { once: true })
-    document.addEventListener('mousemove', startPlayback, { once: true })
+    // Resume when tab becomes visible again
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') ensurePlaying()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
-      audio.pause()
-      audio.src = ''
-      document.removeEventListener('click', startPlayback)
-      document.removeEventListener('keydown', startPlayback)
-      document.removeEventListener('touchstart', startPlayback)
-      document.removeEventListener('scroll', startPlayback)
-      document.removeEventListener('mousemove', startPlayback)
+      document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [])
 
-  return null
+  const handleInteraction = () => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.play().then(() => setStarted(true)).catch(() => {})
+  }
+
+  return (
+    <>
+      <audio
+        ref={audioRef}
+        src="/competitive-bg.mp3"
+        loop
+        autoPlay
+        preload="auto"
+        style={{ display: 'none' }}
+      />
+      {/* Full-screen invisible overlay to capture first interaction */}
+      {!started && (
+        <div
+          onClick={handleInteraction}
+          onMouseMove={handleInteraction}
+          onTouchStart={handleInteraction}
+          onScroll={handleInteraction}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            cursor: 'default',
+          }}
+        />
+      )}
+    </>
+  )
 }

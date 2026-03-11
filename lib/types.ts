@@ -25,6 +25,18 @@ export interface Interview {
   isEndClient?: boolean
 }
 
+export interface Hire {
+  id: string
+  candidateName: string
+  clientName: string
+  endClientName: string
+  hiredDate: string
+  managerId: string
+  managerName: string
+  isEndClient: boolean
+  points: number
+}
+
 export interface Company {
   id: string
   name: string

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getManagerForCandidate, MANAGERS } from '@/lib/managers'
-import { Interview, ManagerStats } from '@/lib/types'
+import { Interview, Hire, ManagerStats } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -13,7 +13,7 @@ const INTERVIEW_LEVEL_MAP: Record<number, 'Initial' | 'Final' | null> = {
   6: null,      // Prep Call - excluded
 }
 
-function isMarchInterview(dateStr: string): boolean {
+function isMarch2026(dateStr: string): boolean {
   if (!dateStr) return false
   const d = new Date(dateStr)
   return d.getMonth() === 2 && d.getFullYear() === 2026 // March = month index 2
@@ -22,20 +22,29 @@ function isMarchInterview(dateStr: string): boolean {
 export async function GET() {
   try {
     let interviews: Interview[] = []
+    const rawHires: { id: string; candidateName: string; clientName: string; endClientName: string; hiredDate: string; managerId: string; managerName: string; _clientId: string | null }[] = []
 
     const { queryD365 } = await import('@/lib/d365')
-    // Query itsutra_interviews entity with all needed fields including client lookup
-    const result = await queryD365('itsutra_interviews', {
-      '$select': 'itsutra_interviewid,itsutra_name,itsutra_interviewlevel,itsutra_starttime,itsutra_calendarviewinformationtitle,itsutra_location,itsutra_islegit,statuscode,statecode,itsutra_interviewmode,_itsutra_client_value',
-      '$orderby': 'itsutra_starttime desc',
-      '$top': '2000',
-    })
 
-    // Collect client IDs from March interviews for account type lookup
+    // Query interviews and hired submissions in parallel
+    const [interviewResult, submissionsResult] = await Promise.all([
+      queryD365('itsutra_interviews', {
+        '$select': 'itsutra_interviewid,itsutra_name,itsutra_interviewlevel,itsutra_starttime,itsutra_calendarviewinformationtitle,itsutra_location,itsutra_islegit,statuscode,statecode,itsutra_interviewmode,_itsutra_client_value',
+        '$orderby': 'itsutra_starttime desc',
+        '$top': '2000',
+      }),
+      queryD365('itsutra_submissions', {
+        '$select': 'itsutra_submissionid,statuscode,itsutra_hireddate,_itsutra_client_value,_itsutra_endclient_value,_itsutra_candidate_value,_itsutra_candidatecampaign_value',
+        '$top': '2000',
+      }),
+    ])
+
+    // Collect client IDs for account type lookup
     const marchClientIds = new Set<string>()
 
-    if (result.value && result.value.length > 0) {
-      for (const record of result.value) {
+    // Process interviews
+    if (interviewResult.value && interviewResult.value.length > 0) {
+      for (const record of interviewResult.value) {
         const calTitle = record.itsutra_calendarviewinformationtitle || ''
         const titleParts = calTitle.split('|').map((s: string) => s.trim())
         const candidateNameRaw = titleParts[0] || ''
@@ -68,18 +77,13 @@ export async function GET() {
         const status = record['statuscode@OData.Community.Display.V1.FormattedValue'] || 'Active'
         const dateStr = record.itsutra_starttime || record.createdon || ''
 
-        // Only include March 2026 interviews
-        if (!isMarchInterview(dateStr)) continue
+        if (!isMarch2026(dateStr)) continue
 
         const match = getManagerForCandidate(candidateName) || getManagerForCandidate(candidateNameRaw)
         if (!match) continue
 
         const clientId = record._itsutra_client_value || null
-
-        // Track March interview client IDs
-        if (clientId) {
-          marchClientIds.add(clientId)
-        }
+        if (clientId) marchClientIds.add(clientId)
 
         interviews.push({
           id: record.itsutra_interviewid || Math.random().toString(),
@@ -92,19 +96,53 @@ export async function GET() {
           managerName: match.manager.name,
           accountType: undefined,
           isEndClient: undefined,
-          _clientId: clientId, // temporary for mapping
+          _clientId: clientId,
         } as any)
       }
     }
 
-    // Fetch account types for March interview clients (parallel batches)
+    // Process hired submissions
+    if (submissionsResult.value && submissionsResult.value.length > 0) {
+      for (const record of submissionsResult.value) {
+        const statusFormatted = record['statuscode@OData.Community.Display.V1.FormattedValue'] || ''
+        if (record.statuscode !== 9 && !statusFormatted.toLowerCase().includes('hired')) continue
+
+        const hiredDate = record.itsutra_hireddate || ''
+        if (!isMarch2026(hiredDate)) continue
+
+        const candidateName =
+          record['_itsutra_candidate_value@OData.Community.Display.V1.FormattedValue'] ||
+          record['_itsutra_candidatecampaign_value@OData.Community.Display.V1.FormattedValue'] || ''
+
+        const match = getManagerForCandidate(candidateName)
+        if (!match) continue
+
+        const clientId = record._itsutra_client_value || null
+        if (clientId) marchClientIds.add(clientId)
+
+        const clientName = record['_itsutra_client_value@OData.Community.Display.V1.FormattedValue'] || ''
+        const endClientName = record['_itsutra_endclient_value@OData.Community.Display.V1.FormattedValue'] || ''
+
+        rawHires.push({
+          id: record.itsutra_submissionid || Math.random().toString(),
+          candidateName: match.matchedCandidate,
+          clientName,
+          endClientName,
+          hiredDate,
+          managerId: match.manager.id,
+          managerName: match.manager.name,
+          _clientId: clientId,
+        })
+      }
+    }
+
+    // Fetch account types for all March client IDs (parallel batches)
     const accountTypeMap = new Map<string, { type: string; isEndClient: boolean }>()
 
     if (marchClientIds.size > 0) {
       const clientIdArray = Array.from(marchClientIds)
-
-      // Fire all batch requests in parallel instead of sequentially
       const batchPromises: Promise<void>[] = []
+
       for (let i = 0; i < clientIdArray.length; i += 50) {
         const batch = clientIdArray.slice(i, i + 50)
         const filter = batch.map(id => `accountid eq ${id}`).join(' or ')
@@ -131,7 +169,7 @@ export async function GET() {
       await Promise.all(batchPromises)
     }
 
-    // Enrich interviews with account type and remove temp _clientId in single pass
+    // Enrich interviews with account type
     interviews = interviews.map(interview => {
       const clientId = (interview as any)._clientId
       const { _clientId, ...clean } = interview as any
@@ -142,6 +180,23 @@ export async function GET() {
       }
 
       return { ...clean, accountType: 'Unknown', isEndClient: false }
+    })
+
+    // Build hires with account type info
+    const hires: Hire[] = rawHires.map(h => {
+      const acctInfo = h._clientId ? accountTypeMap.get(h._clientId) : undefined
+      const isEndClient = acctInfo?.isEndClient ?? false
+      return {
+        id: h.id,
+        candidateName: h.candidateName,
+        clientName: h.clientName,
+        endClientName: h.endClientName,
+        hiredDate: h.hiredDate,
+        managerId: h.managerId,
+        managerName: h.managerName,
+        isEndClient,
+        points: isEndClient ? 2 : 1,
+      }
     })
 
     // Calculate manager stats
@@ -166,6 +221,7 @@ export async function GET() {
 
     return NextResponse.json({
       interviews,
+      hires,
       managerStats,
       interviewEntity: 'itsutra_interviews',
       totalCount: interviews.length,
@@ -176,6 +232,7 @@ export async function GET() {
       {
         error: error.message || 'Failed to fetch interviews',
         interviews: [],
+        hires: [],
         managerStats: MANAGERS.map(m => ({
           managerId: m.id,
           managerName: m.name,
@@ -185,7 +242,6 @@ export async function GET() {
           initial: 0,
           final: 0,
           conversionRate: 0,
-
           candidates: m.candidates.map(c => c.name),
         })),
       },

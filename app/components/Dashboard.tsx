@@ -5,7 +5,7 @@ import Header from './Header'
 import CandidateRanking from './CandidateRanking'
 import ManagerRanking from './ManagerRanking'
 import { MANAGERS } from '@/lib/managers'
-import { Interview, ManagerStats } from '@/lib/types'
+import { Interview, Hire, ManagerStats } from '@/lib/types'
 import { AlertTriangle, Loader2, Sparkles } from 'lucide-react'
 
 const POLL_INTERVAL = 30000
@@ -30,6 +30,7 @@ const LiveClock = memo(function LiveClock() {
 
 export default function Dashboard({ signageMode = false }: DashboardProps) {
   const [interviews, setInterviews] = useState<Interview[]>([])
+  const [hires, setHires] = useState<Hire[]>([])
   const [managerStats, setManagerStats] = useState<ManagerStats[]>([])
   const [lastUpdated, setLastUpdated] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -55,6 +56,7 @@ export default function Dashboard({ signageMode = false }: DashboardProps) {
       if (interviewRes.ok) {
         const data = await interviewRes.json()
         setInterviews(data.interviews || [])
+        setHires(data.hires || [])
         setManagerStats(data.managerStats || [])
         hasManagerStats.current = true
         setD365Connected(true)
@@ -117,7 +119,7 @@ export default function Dashboard({ signageMode = false }: DashboardProps) {
 
       {/* Manager Rankings */}
       <div>
-        <ManagerRanking interviews={interviews} />
+        <ManagerRanking interviews={interviews} hires={hires} />
       </div>
     </div>
   )

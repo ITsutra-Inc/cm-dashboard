@@ -30,6 +30,7 @@ export async function getAccessToken(): Promise<string> {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
+    cache: 'no-store',
   })
 
   if (!res.ok) {
@@ -59,7 +60,7 @@ export async function queryD365(
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
   }
 
-  const res = await fetch(url.toString(), {
+  let res = await fetch(url.toString(), {
     headers: {
       Authorization: `Bearer ${token}`,
       'OData-MaxVersion': '4.0',
@@ -67,7 +68,24 @@ export async function queryD365(
       Accept: 'application/json',
       Prefer: 'odata.include-annotations="*",odata.maxpagesize=500',
     },
+    cache: 'no-store',
   })
+
+  // Retry once with fresh token on 401
+  if (res.status === 401) {
+    cachedToken = null
+    const freshToken = await getAccessToken()
+    res = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${freshToken}`,
+        'OData-MaxVersion': '4.0',
+        'OData-Version': '4.0',
+        Accept: 'application/json',
+        Prefer: 'odata.include-annotations="*",odata.maxpagesize=500',
+      },
+      cache: 'no-store',
+    })
+  }
 
   if (!res.ok) {
     const err = await res.text()
