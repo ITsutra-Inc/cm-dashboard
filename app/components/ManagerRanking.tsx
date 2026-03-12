@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo, memo } from 'react'
-import { Crown, Medal, Star, Award, Users, TrendingUp, Zap, Target, Flame } from 'lucide-react'
+import { Crown, Medal, Star, Award, Users, TrendingUp, Target, Flame } from 'lucide-react'
 import Image from 'next/image'
-import { Interview, Hire } from '@/lib/types'
+import { Interview } from '@/lib/types'
 import { MANAGERS } from '@/lib/managers'
 
 interface ManagerRankingProps {
   interviews: Interview[]
-  hires: Hire[]
 }
 
 interface RankedManager {
@@ -18,15 +17,11 @@ interface RankedManager {
   totalPoints: number
   initialCount: number
   finalCount: number
-  hireCount: number
-  hirePoints: number
   candidates: {
     name: string
     points: number
     initialCount: number
     finalCount: number
-    hireCount: number
-    hirePoints: number
   }[]
 }
 
@@ -243,30 +238,6 @@ const StatCard = memo(function StatCard({ rank, config, manager, activeCandidate
           </div>
         </div>
 
-        {/* Hires */}
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{
-            background: 'rgba(251,191,36,0.15)',
-            border: '1px solid rgba(251,191,36,0.15)',
-          }}>
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-slate-400 font-medium">Hires</span>
-              <span className="text-xs font-bold text-amber-400 font-display">
-                {manager.hireCount}{manager.hirePoints > 0 && <span className="text-[10px] text-slate-500"> (+{manager.hirePoints}pt)</span>}
-              </span>
-            </div>
-            <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-              <div className="h-full rounded-full bar-fill-animated transition-[width] duration-700"
-                style={{
-                  width: `${maxPoints > 0 ? (manager.hirePoints / maxPoints) * 100 : 0}%`,
-                  background: 'linear-gradient(90deg, #f59e0b, #fbbf24)',
-                }} />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Candidate chips */}
@@ -333,8 +304,8 @@ const StatCard = memo(function StatCard({ rank, config, manager, activeCandidate
   )
 })
 
-export default function ManagerRanking({ interviews, hires }: ManagerRankingProps) {
-  // Build lookup maps for O(n) instead of O(n*m)
+export default function ManagerRanking({ interviews }: ManagerRankingProps) {
+  // Build a lookup map: candidateName -> interviews for O(n) instead of O(n*m)
   const { ranked, maxPoints, podiumOrder } = useMemo(() => {
     const interviewsByCandidate = new Map<string, Interview[]>()
     for (const interview of interviews) {
@@ -343,19 +314,10 @@ export default function ManagerRanking({ interviews, hires }: ManagerRankingProp
       else interviewsByCandidate.set(interview.candidateName, [interview])
     }
 
-    const hiresByCandidate = new Map<string, Hire[]>()
-    for (const hire of hires) {
-      const existing = hiresByCandidate.get(hire.candidateName)
-      if (existing) existing.push(hire)
-      else hiresByCandidate.set(hire.candidateName, [hire])
-    }
-
     const managerData: RankedManager[] = MANAGERS.map(manager => {
       let totalPoints = 0
       let initialCount = 0
       let finalCount = 0
-      let hireCount = 0
-      let hirePoints = 0
 
       const candidates = manager.candidates.map(candidate => {
         let cInitial = 0
@@ -372,23 +334,17 @@ export default function ManagerRanking({ interviews, hires }: ManagerRankingProp
           }
         }
 
-        const candidateHires = hiresByCandidate.get(candidate.name) || []
-        const cHireCount = candidateHires.length
-        const cHirePoints = candidateHires.reduce((sum, h) => sum + h.points, 0)
-
-        const cPoints = cInitial * 1 + cFinal * 2 + bonusPoints + cHirePoints
+        const cPoints = cInitial * 1 + cFinal * 2 + bonusPoints
         totalPoints += cPoints
         initialCount += cInitial
         finalCount += cFinal
-        hireCount += cHireCount
-        hirePoints += cHirePoints
 
-        return { name: candidate.name, points: cPoints, initialCount: cInitial, finalCount: cFinal, hireCount: cHireCount, hirePoints: cHirePoints }
+        return { name: candidate.name, points: cPoints, initialCount: cInitial, finalCount: cFinal }
       })
 
       candidates.sort((a, b) => b.points - a.points)
 
-      return { id: manager.id, name: manager.name, color: manager.color, totalPoints, initialCount, finalCount, hireCount, hirePoints, candidates }
+      return { id: manager.id, name: manager.name, color: manager.color, totalPoints, initialCount, finalCount, candidates }
     })
 
     const ranked = managerData.sort((a, b) => b.totalPoints - a.totalPoints)
@@ -401,7 +357,7 @@ export default function ManagerRanking({ interviews, hires }: ManagerRankingProp
     ] : ranked.map((m, i) => ({ manager: m, rank: i, config: RANK_CONFIG[i] }))
 
     return { ranked, maxPoints, podiumOrder }
-  }, [interviews, hires])
+  }, [interviews])
 
   const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
