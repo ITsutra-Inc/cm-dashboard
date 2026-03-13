@@ -397,9 +397,9 @@ export default function ManagerRanking({ interviews }: ManagerRankingProps) {
         backgroundSize: '60px 60px',
       }} />
 
-      <div className="relative z-10 px-8 pt-2 pb-4">
+      <div className="relative z-10 px-8 pt-1 pb-2">
         {/* Title section */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-3">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4" style={{
             background: 'rgba(99,102,241,0.08)',
             border: '1px solid rgba(99,102,241,0.15)',
@@ -415,7 +415,7 @@ export default function ManagerRanking({ interviews }: ManagerRankingProps) {
         </div>
 
         {/* Podium - 2nd, 1st, 3rd */}
-        <div className="flex items-end justify-center gap-5 sm:gap-8 mb-4 px-4">
+        <div className="flex items-end justify-center gap-5 sm:gap-8 mb-2 px-4">
           {podiumOrder.map(({ manager, rank, config }) => {
             const isGold = rank === 0
             const isSilver = rank === 1

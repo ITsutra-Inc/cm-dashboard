@@ -27,7 +27,10 @@ body {
   color: #e2e8f0;
   height: 100vh;
   overflow: hidden;
-  zoom: 1.1;
+  zoom: 1.15;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* ═══════════════════════════════════════
