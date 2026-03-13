@@ -1,21 +1,38 @@
 <!DOCTYPE html>
 <html>
 <body>
-<audio id="a" src="/competitive-bg.mp3" loop preload="auto"></audio>
+<audio id="a" src="/competitive-bg.mp3" loop preload="auto" autoplay></audio>
 <script>
   var a = document.getElementById('a');
-  // Try playing immediately
-  a.play().catch(function(){});
-  // Retry every 500ms
-  setInterval(function() { if (a.paused) a.play().catch(function(){}); }, 500);
+  var playing = false;
+
+  function tryPlay() {
+    if (playing && !a.paused) return;
+    a.play().then(function() { playing = true; }).catch(function(){});
+  }
+
+  // Try immediately
+  tryPlay();
+
   // Try Web Audio API
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
     var src = ctx.createMediaElementSource(a);
     src.connect(ctx.destination);
     if (ctx.state === 'suspended') ctx.resume();
-    a.play().catch(function(){});
+    tryPlay();
   } catch(e) {}
+
+  // Retry periodically
+  setInterval(tryPlay, 500);
+
+  // Listen for play message from parent
+  window.addEventListener('message', function(e) {
+    if (e.data === 'play') tryPlay();
+  });
+
+  // Keep playing if paused
+  a.addEventListener('pause', function() { a.play().catch(function(){}); });
 </script>
 </body>
 </html>
