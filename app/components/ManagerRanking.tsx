@@ -469,8 +469,9 @@ export default function ManagerRanking({ interviews }: ManagerRankingProps) {
                       {avatarData?.type === 'video' ? (
                         <video
                           ref={(el) => {
-                            // Force play on signage/cast devices
                             if (el) {
+                              el.setAttribute('webkit-playsinline', 'true')
+                              el.setAttribute('x-webkit-airplay', 'allow')
                               el.play().catch(() => {})
                               el.addEventListener('loadeddata', () => el.play().catch(() => {}))
                               el.addEventListener('suspend', () => el.play().catch(() => {}))
@@ -482,9 +483,6 @@ export default function ManagerRanking({ interviews }: ManagerRankingProps) {
                           loop
                           muted
                           playsInline
-                          // @ts-expect-error webkit attribute for older signage browsers
-                          webkit-playsinline="true"
-                          x-webkit-airplay="allow"
                           preload="auto"
                           className="w-full h-full object-cover"
                         />
