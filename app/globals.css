@@ -25,8 +25,9 @@ body {
   font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
   background: #020617;
   color: #e2e8f0;
-  min-height: 100vh;
-  overflow-x: hidden;
+  height: 100vh;
+  overflow: hidden;
+  zoom: 1.1;
 }
 
 /* ═══════════════════════════════════════
@@ -88,7 +89,6 @@ body {
   top: -300px;
   right: -200px;
   opacity: 0.10;
-  animation: orbit1 45s linear infinite;
 }
 
 .bg-mesh::after {
@@ -98,7 +98,6 @@ body {
   bottom: -250px;
   left: -200px;
   opacity: 0.08;
-  animation: orbit2 50s linear infinite;
 }
 
 @keyframes orbit1 {
@@ -141,7 +140,7 @@ body {
     radial-gradient(1.5px 1.5px at 48% 30%, rgba(251,191,36,0.5) 0%, transparent 100%),
     radial-gradient(1px 1px at 75% 55%, rgba(59,130,246,0.5) 0%, transparent 100%),
     radial-gradient(1px 1px at 20% 55%, rgba(168,85,247,0.4) 0%, transparent 100%);
-  animation: stars-twinkle 8s ease-in-out infinite alternate;
+  opacity: 0.7;
 }
 
 @keyframes stars-twinkle {
@@ -180,7 +179,6 @@ body {
       rgba(251,191,36,0.02) 320deg,
       transparent 360deg
     );
-  animation: aurora-rotate 90s linear infinite;
 }
 
 .bg-aurora::after {
@@ -199,7 +197,6 @@ body {
       rgba(59,130,246,0.03) 240deg,
       transparent 360deg
     );
-  animation: aurora-rotate 100s linear infinite reverse;
 }
 
 @keyframes aurora-rotate {
@@ -357,7 +354,7 @@ body {
     rgba(255,255,255,0.2) 50%,
     transparent 100%
   );
-  animation: shimmer 3s linear infinite;
+  animation: shimmer 6s linear infinite;
 }
 
 @keyframes shimmer {
@@ -403,7 +400,7 @@ body {
     #fbbf24, #f59e0b, #fcd34d, #f97316,
     #fbbf24, #fde68a, #f59e0b, #fbbf24
   );
-  animation: rotate-border 4s linear infinite;
+  animation: rotate-border 8s linear infinite;
   z-index: 0;
 }
 
@@ -418,7 +415,7 @@ body {
     transparent, rgba(245,158,11,0.25),
     transparent
   );
-  animation: rotate-border 4s linear infinite reverse;
+  animation: rotate-border 8s linear infinite reverse;
   filter: blur(10px);
   z-index: 0;
 }
@@ -477,7 +474,7 @@ body {
 
 @keyframes pulse-opacity {
   0%, 100% { opacity: 0.3; transform: translateZ(0) scale(1); }
-  50% { opacity: 1; transform: translateZ(0) scale(1.08); }
+  50% { opacity: 0.7; transform: translateZ(0) scale(1.03); }
 }
 
 .gold-crown-float {
@@ -666,7 +663,7 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: gradient-shift 10s linear infinite;
+  animation: gradient-shift 20s linear infinite;
   text-shadow: none;
 }
 
@@ -715,7 +712,7 @@ body {
       transparent 340deg,
       transparent 360deg
     );
-  animation: light-rays-rotate 40s linear infinite;
+  animation: light-rays-rotate 80s linear infinite;
 }
 
 @keyframes light-rays-rotate {

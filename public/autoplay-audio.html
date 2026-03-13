@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+<audio id="a" src="/competitive-bg.mp3" loop preload="auto"></audio>
+<script>
+  var a = document.getElementById('a');
+  // Try playing immediately
+  a.play().catch(function(){});
+  // Retry every 500ms
+  setInterval(function() { if (a.paused) a.play().catch(function(){}); }, 500);
+  // Try Web Audio API
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var src = ctx.createMediaElementSource(a);
+    src.connect(ctx.destination);
+    if (ctx.state === 'suspended') ctx.resume();
+    a.play().catch(function(){});
+  } catch(e) {}
+</script>
+</body>
+</html>

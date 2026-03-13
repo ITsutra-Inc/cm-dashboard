@@ -67,15 +67,6 @@ function AnimatedPoints({ value, color, glowColor, isGold, size = 'text-3xl' }: 
       textShadow: `0 0 20px ${glowColor}, 0 0 40px ${glowColor}`,
     }}>
       {display}
-      {done && (
-        <span className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-          <span className="absolute inset-0" style={{
-            background: `linear-gradient(90deg, transparent 0%, ${isGold ? 'rgba(251,191,36,0.4)' : 'rgba(255,255,255,0.25)'} 50%, transparent 100%)`,
-            animation: 'shimmer-sweep 2.5s ease-in-out infinite',
-            backgroundSize: '200% 100%',
-          }} />
-        </span>
-      )}
     </span>
   )
 }
@@ -406,9 +397,9 @@ export default function ManagerRanking({ interviews }: ManagerRankingProps) {
         backgroundSize: '60px 60px',
       }} />
 
-      <div className="relative z-10 px-8 pt-4 pb-8">
+      <div className="relative z-10 px-8 pt-2 pb-4">
         {/* Title section */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4" style={{
             background: 'rgba(99,102,241,0.08)',
             border: '1px solid rgba(99,102,241,0.15)',
@@ -424,7 +415,7 @@ export default function ManagerRanking({ interviews }: ManagerRankingProps) {
         </div>
 
         {/* Podium - 2nd, 1st, 3rd */}
-        <div className="flex items-end justify-center gap-5 sm:gap-8 mb-10 px-4">
+        <div className="flex items-end justify-center gap-5 sm:gap-8 mb-4 px-4">
           {podiumOrder.map(({ manager, rank, config }) => {
             const isGold = rank === 0
             const isSilver = rank === 1
@@ -457,7 +448,7 @@ export default function ManagerRanking({ interviews }: ManagerRankingProps) {
                 )}
 
                 {/* Avatar with glow ring */}
-                <div className={`relative mb-4 ${isGold ? 'gold-pulse-glow' : isSilver ? 'silver-pulse-glow' : 'bronze-pulse-glow'}`}>
+                <div className={`relative mb-2 ${isGold ? 'gold-pulse-glow' : isSilver ? 'silver-pulse-glow' : 'bronze-pulse-glow'}`}>
                   {/* Outer glow */}
                   <div className="absolute inset-[-10px] rounded-full pointer-events-none" style={{
                     background: `conic-gradient(from 0deg, ${config.ringFrom}, ${config.ringTo}, ${config.ringFrom})`,
@@ -477,11 +468,24 @@ export default function ManagerRanking({ interviews }: ManagerRankingProps) {
                     >
                       {avatarData?.type === 'video' ? (
                         <video
+                          ref={(el) => {
+                            // Force play on signage/cast devices
+                            if (el) {
+                              el.play().catch(() => {})
+                              el.addEventListener('loadeddata', () => el.play().catch(() => {}))
+                              el.addEventListener('suspend', () => el.play().catch(() => {}))
+                            }
+                          }}
                           src={avatarData.src}
+                          poster="/avatars/paul.webp"
                           autoPlay
                           loop
                           muted
                           playsInline
+                          // @ts-expect-error webkit attribute for older signage browsers
+                          webkit-playsinline="true"
+                          x-webkit-airplay="allow"
+                          preload="auto"
                           className="w-full h-full object-cover"
                         />
                       ) : avatarData?.type === 'image' ? (
@@ -517,10 +521,10 @@ export default function ManagerRanking({ interviews }: ManagerRankingProps) {
                 </div>
 
                 {/* Name */}
-                <h3 className={`font-extrabold text-white text-center mt-3 font-display ${isGold ? 'text-xl' : 'text-lg'}`}>{manager.name}</h3>
+                <h3 className={`font-extrabold text-white text-center mt-1 font-display ${isGold ? 'text-xl' : 'text-lg'}`}>{manager.name}</h3>
 
                 {/* Animated score display */}
-                <div className="text-center mt-2 mb-1">
+                <div className="text-center mt-1 mb-0">
                   <div className="flex items-center justify-center gap-1.5">
                     <AnimatedPoints
                       value={manager.totalPoints}
