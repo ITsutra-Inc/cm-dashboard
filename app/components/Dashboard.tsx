@@ -10,6 +10,7 @@ import { AlertTriangle, Loader2, Sparkles } from 'lucide-react'
 
 const POLL_INTERVAL = 30000
 const TAB_ROTATE_INTERVAL = 20000
+const DESIGN_WIDTH = 1440
 
 interface DashboardProps {
   signageMode?: boolean
@@ -28,6 +29,44 @@ const LiveClock = memo(function LiveClock() {
   return <span className="stat-number">{time}</span>
 })
 
+function useViewportScale() {
+  const [node, setNode] = useState<HTMLDivElement | null>(null)
+  const [scale, setScale] = useState(1)
+  const [ready, setReady] = useState(false)
+
+  const callbackRef = useCallback((el: HTMLDivElement | null) => {
+    setNode(el)
+  }, [])
+
+  useEffect(() => {
+    if (!node) return
+
+    function recalc() {
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const contentH = node!.scrollHeight || 1
+
+      const scaleX = vw / DESIGN_WIDTH
+      const scaleY = vh / contentH
+      setScale(Math.min(scaleX, scaleY))
+      setReady(true)
+    }
+
+    recalc()
+    window.addEventListener('resize', recalc)
+
+    const observer = new ResizeObserver(recalc)
+    observer.observe(node)
+
+    return () => {
+      window.removeEventListener('resize', recalc)
+      observer.disconnect()
+    }
+  }, [node])
+
+  return { callbackRef, scale, ready }
+}
+
 export default function Dashboard({ signageMode = false }: DashboardProps) {
   const [interviews, setInterviews] = useState<Interview[]>([])
   const [managerStats, setManagerStats] = useState<ManagerStats[]>([])
@@ -38,6 +77,7 @@ export default function Dashboard({ signageMode = false }: DashboardProps) {
   const [initialLoad, setInitialLoad] = useState(true)
   const [activeTab, setActiveTab] = useState<TabView>('managers')
   const hasManagerStats = useRef(false)
+  const { callbackRef, scale, ready } = useViewportScale()
 
   // Auto-rotate tabs in signage mode
   useEffect(() => {
@@ -104,19 +144,30 @@ export default function Dashboard({ signageMode = false }: DashboardProps) {
   }
 
   return (
-    <div className="relative z-10 mx-auto pt-0 pb-0 max-w-[1440px] px-4 sm:px-6 lg:px-8">
-      {error && (
-        <div className="mb-6 glass rounded-xl p-4 border-amber-500/20 border flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm text-amber-200 font-medium">{error}</p>
-            <p className="text-xs text-slate-500 mt-0.5">Auto-retrying every 30s</p>
+    <div className="fixed inset-0 overflow-hidden flex items-center justify-center">
+      <div
+        ref={callbackRef}
+        className="relative z-10 px-8"
+        style={{
+          width: DESIGN_WIDTH,
+          flexShrink: 0,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+          opacity: ready ? 1 : 0,
+          transition: 'opacity 0.3s ease',
+        }}
+      >
+        {error && (
+          <div className="mb-4 glass rounded-xl p-4 border-amber-500/20 border flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-amber-200 font-medium">{error}</p>
+              <p className="text-xs text-slate-500 mt-0.5">Auto-retrying every 30s</p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Manager Rankings */}
-      <div>
+        {/* Manager Rankings */}
         <ManagerRanking interviews={interviews} />
       </div>
     </div>
